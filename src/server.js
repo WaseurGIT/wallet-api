@@ -3,13 +3,16 @@ import dotenv from "dotenv";
 import { initDB } from "./config/db.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 
-import transactionRoute from "./routes/transactionsRoute.js"
+import transactionRoute from "./routes/transactionsRoute.js";
+import job from "./config/cron.js";
 
 dotenv.config();
 const app = express();
 
+if (process.env.NODE_ENV === "production") job.start();
+
 // built in middleware
-app.use(rateLimiter)
+app.use(rateLimiter);
 app.use(express.json());
 
 // custom middleware
@@ -20,13 +23,17 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5001;
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // get -> fetch data from server
 app.get("/", (req, res) => {
   res.send("its working");
 });
 
-app.use('/api/transactions', transactionRoute)
-app.use('/api/products', transactionRoute)
+app.use("/api/transactions", transactionRoute);
+app.use("/api/products", transactionRoute);
 
 initDB().then(() => {
   app.listen(PORT, () => {
